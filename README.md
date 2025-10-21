@@ -72,7 +72,7 @@ src/
 
 ```bash
 git clone <repository-url>
-cd project filepath
+cd "project filepath"
 ```
 
 ### 2. Install Dependencies
