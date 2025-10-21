@@ -159,17 +159,14 @@ After running `npm run prisma:seed`, you'll have these test accounts:
 
 ### Admin User
 - Email: `admin@example.com`
-- Password: `admin123`
 - Role: ADMIN
 
 ### Organizer User
 - Email: `organizer@example.com`
-- Password: `organizer123`
 - Role: ORGANIZER
 
 ### Regular User
 - Email: `user@example.com`
-- Password: `user123`
 - Role: USER
 
 ## Development Commands
