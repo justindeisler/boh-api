@@ -1,0 +1,77 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: boh_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: boh_user
+      POSTGRES_PASSWORD: boh_password_dev
+      POSTGRES_DB: boh_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - boh_network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U boh_user -d boh_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: boh_pgbouncer
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://boh_user:boh_password_dev@postgres:5432/boh_db
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 25
+      RESERVE_POOL_SIZE: 5
+      RESERVE_POOL_TIMEOUT: 3
+      SERVER_LIFETIME: 3600
+      SERVER_IDLE_TIMEOUT: 600
+    ports:
+      - '5432:5432'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - boh_network
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-h', 'localhost', '-p', '5432']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: boh_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redis_password_dev
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - boh_network
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  boh_network:
+    driver: bridge

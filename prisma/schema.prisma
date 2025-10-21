@@ -1,0 +1,298 @@
+// Prisma Schema for BOH Event Management Platform with CMS
+// Database: PostgreSQL 16
+// ORM: Prisma
+// Generated based on context/database_design.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// ========================================
+// ENUMS
+// ========================================
+
+// User Management Enums
+enum UserRole {
+  USER
+  ORGANIZER
+  ADMIN
+}
+
+// Event Management Enums
+enum EventCategory {
+  MUSIC
+  SPORTS
+  CONFERENCE
+  WORKSHOP
+  FESTIVAL
+  THEATER
+  EXHIBITION
+  OTHER
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+// Booking Enums
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REFUNDED
+}
+
+// CMS Enums
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SectionType {
+  HERO
+  TEXT
+  IMAGE
+  VIDEO
+  GALLERY
+  CONTACT_FORM
+  EVENT_LIST
+}
+
+enum SettingType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  JSON
+  IMAGE
+}
+
+// ========================================
+// EVENT MANAGEMENT MODELS
+// ========================================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  phone         String?
+  role          UserRole @default(USER)
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  bookings       Booking[]
+  createdEvents  Event[]         @relation("EventOrganizer")
+  uploadedMedia  MediaFile[]
+  createdPages   ContentPage[]   @relation("PageAuthor")
+  refreshTokens  RefreshToken[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model Event {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  description String        @db.Text
+  category    EventCategory
+  venueId     String
+  capacity    Int
+  bookedCount Int           @default(0)
+  price       Decimal       @db.Decimal(10, 2)
+  currency    String        @default("USD")
+  startDate   DateTime
+  endDate     DateTime
+  status      EventStatus   @default(DRAFT)
+  imageUrl    String?
+  videoUrl    String?
+  organizerId String
+  tags        String[]      @default([])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  publishedAt DateTime?
+
+  // Relations
+  venue     Venue     @relation(fields: [venueId], references: [id])
+  bookings  Booking[]
+  organizer User      @relation("EventOrganizer", fields: [organizerId], references: [id])
+
+  @@index([startDate])
+  @@index([status])
+  @@index([category])
+  @@index([status, startDate])
+  @@index([category, startDate])
+  @@index([slug])
+  @@index([venueId])
+  @@index([organizerId])
+  @@map("events")
+}
+
+model Venue {
+  id         String   @id @default(cuid())
+  name       String
+  slug       String   @unique
+  address    String
+  city       String
+  state      String
+  country    String
+  postalCode String
+  latitude   Decimal? @db.Decimal(10, 8)
+  longitude  Decimal? @db.Decimal(11, 8)
+  capacity   Int
+  amenities  String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  events Event[]
+
+  @@index([city, country])
+  @@index([slug])
+  @@map("venues")
+}
+
+model Booking {
+  id          String        @id @default(cuid())
+  userId      String
+  eventId     String
+  seats       Int
+  totalPrice  Decimal       @db.Decimal(10, 2)
+  status      BookingStatus @default(PENDING)
+  paymentId   String?
+  bookingDate DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([status])
+  @@index([bookingDate])
+  @@map("bookings")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([slug])
+  @@map("tags")
+}
+
+// ========================================
+// CONTENT MANAGEMENT SYSTEM MODELS
+// ========================================
+
+model ContentPage {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  title           String
+  metaDescription String?
+  status          ContentStatus @default(DRAFT)
+  authorId        String
+  publishedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  sections ContentSection[]
+  author   User             @relation("PageAuthor", fields: [authorId], references: [id])
+
+  @@index([slug])
+  @@index([status])
+  @@index([authorId])
+  @@map("content_pages")
+}
+
+model ContentSection {
+  id        String      @id @default(cuid())
+  pageId    String
+  type      SectionType
+  position  Int
+  data      Json
+  visible   Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Relations
+  page ContentPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@index([type])
+  @@map("content_sections")
+}
+
+model MediaFile {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  mimeType     String
+  fileSize     Int
+  width        Int?
+  height       Int?
+  url          String
+  thumbnailUrl String?
+  altText      String?
+  uploadedById String
+  folder       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
+
+  @@index([uploadedById])
+  @@index([mimeType])
+  @@index([folder])
+  @@map("media_files")
+}
+
+model SiteSetting {
+  id          String      @id @default(cuid())
+  key         String      @unique
+  value       String
+  type        SettingType
+  group       String
+  description String?
+  isPublic    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([key])
+  @@index([group])
+  @@index([type])
+  @@map("site_settings")
+}

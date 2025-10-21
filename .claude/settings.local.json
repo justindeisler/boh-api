@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma validate:*)",
+      "Bash(npx prisma format:*)",
+      "Bash(psql:*)",
+      "Bash(sudo -u postgres psql:*)",
+      "Bash(PGPASSWORD=Kobold8497 psql:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npm run prisma:seed:*)",
+      "Bash(npm run start:dev:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(kill:*)",
+      "Bash(pkill:*)",
+      "Bash(xargs:*)",
+      "Bash(sudo lsof:*)",
+      "Bash(npx prisma db push:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
