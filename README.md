@@ -1,4 +1,4 @@
-# BOH Event Management Platform - Backend API
+# Event Management Platform - Backend API
 
 A production-ready event management platform with integrated Admin CMS, built with NestJS, Fastify, and Clean Architecture principles.
 
@@ -72,7 +72,7 @@ src/
 
 ```bash
 git clone <repository-url>
-cd boh-api
+cd project filepath
 ```
 
 ### 2. Install Dependencies
@@ -100,7 +100,7 @@ The `.env` file is already configured for local development. Review and update i
 
 ```bash
 # Database will be available at:
-DATABASE_URL=postgresql://boh_user:boh_password_dev@localhost:5432/boh_db?pgbouncer=true
+DATABASE_URL=postgresql://user:password_dev@localhost:5432/db?pgbouncer=true
 ```
 
 ### 5. Run Database Migrations
@@ -158,17 +158,17 @@ The API will be available at `http://localhost:3000`
 After running `npm run prisma:seed`, you'll have these test accounts:
 
 ### Admin User
-- Email: `admin@boh.com`
+- Email: `admin@example.com`
 - Password: `admin123`
 - Role: ADMIN
 
 ### Organizer User
-- Email: `organizer@boh.com`
+- Email: `organizer@example.com`
 - Password: `organizer123`
 - Role: ORGANIZER
 
 ### Regular User
-- Email: `user@boh.com`
+- Email: `user@example.com`
 - Password: `user123`
 - Role: USER
 
@@ -215,7 +215,7 @@ NODE_ENV=development
 PORT=3000
 
 # Database
-DATABASE_URL=postgresql://boh_user:boh_password_dev@localhost:5432/boh_db
+DATABASE_URL=postgresql://user:password_dev@localhost:5432/db
 
 # Redis
 REDIS_HOST=localhost
